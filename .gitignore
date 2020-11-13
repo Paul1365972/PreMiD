@@ -10,6 +10,9 @@ tmp
 !.yarn/plugins
 .pnp.*
 
+*.iml
+.idea
+
 src/package-lock.json
 src/package.json
 src/update.ini
