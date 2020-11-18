@@ -1,10 +1,11 @@
 import { Client } from "discord-rpc";
 import { app } from "electron";
-import { info } from "../util/debug";
+import { info, success, error } from "../util/debug";
 
 //* Import custom types
 import PresenceData from "../../@types/PreMiD/PresenceData";
 import { trayManager } from "..";
+import { socket } from "./socketManager";
 
 export let rpcClients: Array<RPCClient> = [];
 
@@ -13,11 +14,16 @@ class RPCClient {
 	currentPresence: PresenceData;
 	client: Client;
 	clientReady: boolean = false;
+	registered: boolean = false;
 
 	constructor(clientId: string) {
 		rpcClients.push(this);
 
 		this.clientId = clientId;
+		this.registered = app.setAsDefaultProtocolClient(`discord-${clientId}`);
+		if (this.registered) {
+			success(`Registered PreMiD as default client for "discord-${clientId}"`)
+		}
 		this.client = new Client({
 			transport: "ipc"
 		});
@@ -35,7 +41,45 @@ class RPCClient {
 				))
 		);
 
-		this.client.login({ clientId: this.clientId }).catch(() => this.destroy());
+		this.client.login({clientId: this.clientId})
+			.then((client) => {
+				client.subscribe('ACTIVITY_JOIN', (secret) => {
+					info(`ACTIVITY_JOIN: '${secret}'`);
+					socket.emit("activityJoin", { clientId: this.clientId, secret: secret });
+				});
+				client.subscribe('ACTIVITY_SPECTATE', (secret) => {
+					// Doesnt work (yet)
+					info(`ACTIVITY_SPECTATE: '${secret}'`);
+					socket.emit("activitySpectate", { clientId: this.clientId, secret: secret });
+				});
+				client.subscribe('ACTIVITY_JOIN_REQUEST', (user) => {
+					// For some random reason not called
+					info(`ACTIVITY_JOIN_REQUEST: '${user}'`);
+					this.client.sendJoinInvite(user)
+						.then(() => success("Successfully sent invite"),
+							(e) => error("Unable to sent invite: " + e));
+				});
+				client.subscribe('ACTIVITY_INVITE', (obj) => {
+					// Not yet tested
+					info(`ACTIVITY_INVITE: '${obj}'`);
+				});
+				client.subscribe('GAME_JOIN', (obj) => {
+					// Not yet tested
+					info(`GAME_JOIN: '${obj}'`);
+				});
+				client.subscribe('GAME_SPECTATE', (obj) => {
+					// Not yet tested
+					info(`GAME_SPECTATE: '${obj}'`);
+				});
+				client.subscribe('NOTIFICATION_CREATE', (obj) => {
+					// Not yet tested
+					info(`NOTIFICATION_CREATE: '${obj}'`);
+				});
+				success("Subscribed");
+			}).catch((e) => {
+			    error("Error: " + e);
+				this.destroy();
+			});
 
 		info(`Create RPC client (${this.clientId})`);
 	}
@@ -47,6 +91,15 @@ class RPCClient {
 
 		if (presenceData.trayTitle)
 			trayManager.tray.setTitle(presenceData.trayTitle);
+
+		presenceData.presenceData.matchSecret = "subx2";
+		presenceData.presenceData.spectateSecret = "subx3";
+		presenceData.presenceData.joinSecret = "subx4";
+		// discord-rpc... why just why
+		// @ts-ignore
+		presenceData.presenceData.partyId = "subx5";
+		presenceData.presenceData.partySize = 1;
+		presenceData.presenceData.partyMax = 1337;
 
 		this.client
 			.setActivity(presenceData.presenceData)
