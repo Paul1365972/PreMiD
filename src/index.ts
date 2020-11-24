@@ -24,8 +24,10 @@ export let updateCheckerInterval = null;
 let singleInstanceLock = app.requestSingleInstanceLock();
 
 //* Application already running?
-if (!singleInstanceLock)
+if (!singleInstanceLock) {
 	app.quit();
+	process.exit(1);
+}
 
 app.setAppUserModelId("Timeraa.PreMiD");
 app.whenReady().then(async () => {

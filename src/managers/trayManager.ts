@@ -81,4 +81,6 @@ export class TrayManager {
 	}
 }
 
-app.once("quit", () => trayManager.tray.destroy());
+app.once("quit", () => {
+	if (trayManager) trayManager.tray.destroy();
+});
