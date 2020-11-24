@@ -1,5 +1,5 @@
-import { app } from "electron";
-if (!app.isPackaged) var chalk = require("chalk");
+//TODO import { app } from "electron";
+//TODO if (!app.isPackaged) var chalk = require("chalk");
 
 /**
  * Show info message in console
@@ -7,8 +7,9 @@ if (!app.isPackaged) var chalk = require("chalk");
 export function info(message: string) {
 	//* Return if app packaged
 	//* Show debug
-	if (app.isPackaged) return;
-	console.log(`${chalk.bgBlue(chalk.white("  INFO   "))} ${message}`);
+	//if (app.isPackaged) return; TODO
+	//console.log(`${chalk.bgBlue(chalk.white("  INFO   "))} ${message}`);
+	console.log(`  INFO   ${message}`);
 }
 
 /**
@@ -17,8 +18,9 @@ export function info(message: string) {
 export function success(message: string) {
 	//* Return if app packaged
 	//* Show debug
-	if (app.isPackaged) return;
-	console.log(`${chalk.bgGreen(" SUCCESS ")} ${message}`);
+	//if (app.isPackaged) return; TODO
+	//console.log(`${chalk.bgGreen(" SUCCESS ")} ${message}`);
+	console.log(` SUCCESS ${message}`);
 }
 
 /**
@@ -27,6 +29,7 @@ export function success(message: string) {
 export function error(message: string) {
 	//* Return if app packaged
 	//* Show debug
-	if (app.isPackaged) return;
-	console.log(`${chalk.bgRed("  ERROR  ")} ${message}`);
+	//if (app.isPackaged) return; TODO
+	//console.log(`${chalk.bgRed("  ERROR  ")} ${message}`);
+	console.log(`  ERROR  ${message}`);
 }

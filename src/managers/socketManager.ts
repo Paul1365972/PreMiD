@@ -10,7 +10,7 @@ import {
 	clearActivity,
 	getDiscordUser
 } from "./discordManager";
-import { trayManager } from "..";
+import { options, trayManager } from "..";
 
 export let io: socketIo.Server;
 export let socket: socketIo.Socket;
@@ -30,7 +30,7 @@ export function init() {
 			if (o !== '*') c('Not a chrome extension, socket denied.', false);
 			c(null, true);
 		});
-		server.listen(3020, () => {
+		server.listen(options.port, () => {
 			//* Resolve promise
 			//* Debug info
 			resolve();

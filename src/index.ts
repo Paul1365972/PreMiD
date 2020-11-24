@@ -7,6 +7,9 @@ import { platform } from "os";
 import { checkForUpdate } from "./util/updateChecker";
 import { TrayManager } from "./managers/trayManager";
 import * as Sentry from "@sentry/electron";
+import commandLineArgs from "command-line-args";
+import { info } from "./util/debug";
+import { checkoutActivity } from "./managers/discordManager";
 
 if (app.isPackaged)
 	Sentry.init({
@@ -20,23 +23,38 @@ export let trayManager: TrayManager;
 //* When app is ready
 export let updateCheckerInterval = null;
 
-//* Attempt to get lock to prevent multiple instances of PreMiD from running
-let singleInstanceLock = app.requestSingleInstanceLock();
+info(`Starting with args: '${process.argv.join(" ")}'`);
 
-//* Application already running?
-if (!singleInstanceLock) {
-	app.quit();
-	process.exit(1);
+const optionDefinitions = [
+	{ name: 'checkout', alias: 'c', type: String, defaultOption: true },
+	{ name: 'multiple-instances', alias: 'm', type: Boolean },
+	{ name: 'port', alias: 'p', type: Number, defaultValue: 3020 },
+];
+export let options = commandLineArgs(optionDefinitions, { argv: process.argv.slice(app.isPackaged ? 1 : 2), camelCase: true });
+
+if (options.checkout) {
+	const matches = /^discord-([0-9]+):\/\/.*$/.exec(options.checkout);
+	const id = (matches && matches.length == 2) ? matches[1] : options.checkout;
+	checkoutActivity(id);
+	setTimeout(app.quit, 15 * 1000);
+} else {
+	//* Attempt to get lock to prevent multiple instances of PreMiD from running
+    //* Application already running?
+	if (!app.requestSingleInstanceLock() && !options.multipleInstances) {
+		info("Quitting! Application is already running. Use the '--multiple-instances' flag to bypass");
+		app.quit();
+		process.exit(1);
+	}
+
+	app.setAppUserModelId("Timeraa.PreMiD");
+	app.whenReady().then(async () => {
+		trayManager = new TrayManager();
+
+		await Promise.all([checkForUpdate(true), initAutoLaunch(), initSocket()]);
+
+		app.isPackaged
+			? (updateCheckerInterval = setInterval(checkForUpdate, 15 * 60 * 1000))
+			: undefined;
+		if (platform() === "darwin") app.dock.hide();
+	});
 }
-
-app.setAppUserModelId("Timeraa.PreMiD");
-app.whenReady().then(async () => {
-	trayManager = new TrayManager();
-
-	await Promise.all([checkForUpdate(true), initAutoLaunch(), initSocket()]);
-
-	app.isPackaged
-		? (updateCheckerInterval = setInterval(checkForUpdate, 15 * 1000 * 60))
-		: undefined;
-	if (platform() === "darwin") app.dock.hide();
-});

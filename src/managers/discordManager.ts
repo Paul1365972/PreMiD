@@ -20,7 +20,7 @@ class RPCClient {
 		rpcClients.push(this);
 
 		this.clientId = clientId;
-		this.registered = app.setAsDefaultProtocolClient(`discord-${clientId}`);
+		//TODO this.registered = app.setAsDefaultProtocolClient(`discord-${clientId}`);
 		if (this.registered) {
 			success(`Registered PreMiD as default client for "discord-${clientId}"`)
 		}
@@ -156,6 +156,14 @@ export function clearActivity(clientId: string = undefined) {
 		let client = rpcClients.find(c => c.clientId === clientId);
 		client.clearActivity();
 	} else rpcClients.forEach(c => c.clearActivity());
+}
+
+export function checkoutActivity(clientId: string = undefined) {
+	let client = rpcClients.find(c => c.clientId === clientId);
+
+	if (!client) {
+		client = new RPCClient(clientId);
+	}
 }
 
 export async function getDiscordUser() {
